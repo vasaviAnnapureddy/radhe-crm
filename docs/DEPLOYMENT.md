@@ -40,11 +40,16 @@ Open `frontend/vercel.json`. If your Render address is not exactly `https://radh
 6. Open the Vercel address. You should see the landing page.
 
 ## 4. Check the deployed site
+The deployed site uses the same Neon database as your laptop, so the logins are the ones in your `.env`. Nothing has to be seeded on Render.
+
 1. Landing page loads, with photos and the three project cards.
-2. **Admin login** with the `.env` admin email and password. You land on Overview.
+2. **Sign in** with the `.env` admin email and password. You land on Overview.
+   - If the very first sign-in fails or takes long, Render was asleep. Wait a minute and try again.
 3. Refresh the page: you stay signed in (this proves the cookie works across Vercel and Render).
 4. Open **Projects & Inventory**, pick Radhe Skyline, Tower B. Hover a unit. Click unit `B-3004` and then the buyer, Karthik Reddy.
 5. Log out. Open `/console/overview` directly: you are sent to the login page.
+6. Sign in with `PORTAL_CUSTOMER_EMAIL` and `PORTAL_PASSWORD`: you land on "My journey". Then try opening `/console/overview`: you are sent back to your own page.
+7. Sign in with `PORTAL_RM_EMAIL`: you land on "My day".
 
 ## Things to know for demo week
 - **Render's free plan sleeps** after about 15 minutes without visitors. The first request after that can take 30 to 60 seconds. Either open the site a few minutes before the demo, or upgrade the backend to the cheapest paid instance for the week.
