@@ -11,7 +11,7 @@ Build in this exact order. Full details are in `docs/SPEC.md` Section 15. Tick a
 ## Day 2
 - [x] **Phase 5: Frontend foundation and design system.** Vite, theme, layout, reusable components, formatters, styleguide page.
 - [x] **Phase 6: Landing page and login.** Eight landing sections, login, redirects, image credits.
-- [ ] **Phase 7: Overview and Projects & Inventory.** Unit grid. First deploy (Vercel + Render + Neon). (Pages done and liked by the developer; the deploy is still pending.)
+- [x] **Phase 7: Overview and Projects & Inventory.** Unit grid. First deploy (Vercel + Render + Neon). Live at https://radhe-crm.vercel.app/
 
 ## Day 3
 - [x] **Phase 8: Sales, Customers, Collections.**
@@ -19,7 +19,7 @@ Build in this exact order. Full details are in `docs/SPEC.md` Section 15. Tick a
 
 ## Day 4
 - [x] **Phase 10: Risks, search, cross-linking.**
-- [ ] **Phase 10B: Employee and customer portals.** (added 02 Oct; code done; tick after the developer signs in as each role on Neon data)
+- [x] **Phase 10B: Employee and customer portals.** (added 02 Oct)
 - [ ] **Phase 11: Polish, deploy, demo.** Anti-congestion checklist, Docker, CI, README, demo script, secret check.
 - [ ] **Phase 12: Should-have pages.** Interiors, Service & Handover, Reports. Only if 1 to 11 are fully done.
 

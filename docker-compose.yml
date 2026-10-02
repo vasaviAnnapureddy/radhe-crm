@@ -1,0 +1,52 @@
+# Run the whole project on one machine with:   docker compose up --build
+# Then open http://localhost:8080
+#
+# Everything here is LOCAL DEMO ONLY: a throwaway database inside Docker and throwaway logins.
+# None of these values are used by the live site, and no real secret belongs in this file.
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: radhe
+      POSTGRES_PASSWORD: radhe_local_only
+      POSTGRES_DB: radhe
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U radhe -d radhe"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy   # wait until the database accepts connections
+    environment:
+      DATABASE_URL: postgresql://radhe:radhe_local_only@db:5432/radhe
+      ENVIRONMENT: development
+      COOKIE_SECURE: "false"
+      JWT_SECRET: local-docker-demo-secret-not-for-real-use
+      ADMIN_EMAIL: admin@radhe.local
+      ADMIN_PASSWORD: radhe-admin-demo
+      ADMIN_NAME: Radhe Admin
+      PORTAL_PASSWORD: radhe-portal-demo
+      PORTAL_CUSTOMER_EMAIL: karthik@radhe.local
+      PORTAL_RM_EMAIL: sneha@radhe.local
+      PORTAL_SALES_EMAIL: arjun@radhe.local
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 20s
+
+  frontend:
+    build:
+      context: ./frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "8080:80"
