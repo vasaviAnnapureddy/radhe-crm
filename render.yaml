@@ -1,0 +1,26 @@
+# Render "Blueprint": tells Render how to run the backend. See docs/DEPLOYMENT.md.
+# TODO: verify field names against https://render.com/docs/blueprint-spec before the first deploy.
+services:
+  - type: web
+    name: radhe-console-api
+    runtime: python
+    plan: free            # sleeps after about 15 minutes without traffic; see docs/DEPLOYMENT.md
+    region: singapore     # close to India and to the Neon database
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.9
+      - key: ENVIRONMENT
+        value: production
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: LOG_LEVEL
+        value: INFO
+      # Secrets: typed into the Render dashboard by hand, never stored in this file.
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false

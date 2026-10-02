@@ -1,0 +1,54 @@
+# Brand settings. Change the brand here, not in code.
+# The CSS theme (frontend/src/styles, Phase 5) must use these same values.
+
+name: Radhe Constructions
+short_name: Radhe
+console_name: Radhe Constructions Console
+city: Hyderabad
+tagline: Homes that grow with the land.
+logo:
+  type: text            # text wordmark in the heading font, no image logo
+  text: Radhe Constructions
+footer_note: Demo prepared for CGI. All data is fictional.
+
+colors:
+  background: "#F7F5F0"       # warm off-white page background
+  surface: "#FFFFFF"          # cards
+  surface_subtle: "#EFECE5"
+  ink: "#1C1F1D"              # main text
+  ink_secondary: "#5E635F"
+  border: "#E3DFD6"
+  primary: "#2F4A3A"          # deep forest
+  sidebar: "#1F2E27"
+  sidebar_text: "#F7F5F0"
+  accent: "#B5643C"           # clay; one call to action per screen, active states
+  status:
+    good: "#3E7C59"
+    watch: "#C08A2E"
+    risk: "#B4483C"
+    neutral: "#7A7F7B"
+  chart:                      # never more than 4 colours in one chart
+    - "#2F4A3A"               # forest
+    - "#8FA88F"               # sage
+    - "#C9B38C"               # sand
+    - "#B5643C"               # clay
+
+fonts:
+  heading: Fraunces           # landing headings and big console page titles
+  body: Manrope               # everything else
+  numbers: tabular            # tabular figures for all numbers
+
+radius:
+  console_card_px: 10
+  landing_px: 2
+
+layout:
+  spacing_grid_px: 8
+  section_gap_px: [24, 32]
+  content_max_width_px: 1440
+
+locale:
+  number_format: en-IN
+  currency: INR
+  timezone: Asia/Kolkata
+  date_format: "DD MMM YYYY"  # 01 Oct 2026

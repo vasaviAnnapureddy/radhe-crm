@@ -1,0 +1,68 @@
+# Scoring weights. Read by backend/app/scoring (Phase 4).
+# Every score shows its parts in the UI, and every formula has a unit test.
+# Weights in each score add up to 100.
+
+buyer_health:                 # 0-100, higher is healthier
+  weights:
+    payment_timeliness: 40    # fewer and shorter overdue demands = higher
+    engagement_recency: 25    # recent two-way contact = higher
+    open_complaints: 20       # no open complaints or unanswered queries = higher
+    loan_status: 15           # loan sanctioned and disbursing on time = higher
+  bands:                      # used for colours and "at-risk buyers"
+    good_min: 75
+    watch_min: 60             # below this = at risk
+  # payment points = weight x (share of payments made on time) x (1 - worst overdue days / 90)
+  overdue_zero_marks_days: 90       # overdue 90+ days = zero for timeliness
+  engagement_full_marks_days: 7     # we contacted the buyer within 7 days = full marks
+  engagement_zero_marks_days: 45    # no contact for 45+ days = zero
+  complaint_penalty:                # share of the complaints points lost for each one
+    open_ticket: 0.5
+    unanswered_query: 0.25
+  loan_factor:                      # share of the loan points earned
+    none: 1.0                       # paying without a loan
+    sanctioned: 1.0
+    disbursing: 1.0
+    closed: 1.0
+    applied: 0.6
+    awaiting_disbursement: 0.33
+
+lead_score:                   # 0-100, higher is more likely to book
+  weights:
+    budget_fit: 35            # budget matches available inventory
+    source_quality: 25        # past conversion rate of that lead source
+    engagement: 25            # activities and site visits
+    contact_recency: 15       # days since last contact
+  contact_zero_marks_days: 30
+
+project_health:               # 0-100
+  weights:
+    schedule_variance: 25     # average milestone slip
+    cost_variance: 15         # actual vs budget
+    sales_velocity: 25        # units sold vs plan
+    collection_efficiency: 25 # collected / demanded
+    open_high_risks: 10
+  schedule_zero_marks_slip_days: 45
+  cost_zero_marks_variance_pct: 20
+
+employee_scorecard:           # each part shows target, actual, achievement %
+  attention_below_pct: 60     # average achievement below this = "needs attention"
+  roles:
+    sales:
+      bookings_vs_target: 40
+      site_visits: 20
+      conversion: 25
+      stalled_deals: 15       # fewer is better
+    rm_crm:
+      collection_efficiency: 35
+      avg_response_time: 30   # lower is better
+      open_queries: 20        # fewer is better
+      buyers_handled: 15
+    site:
+      milestones_on_time: 50
+      open_quality_issues: 30 # fewer is better
+      milestones_owned: 20
+    default:                  # roles without a specific scorecard
+      tasks_on_time: 100
+
+sales:
+  stalled_negotiation_days: 14   # no activity for this many days = stalled

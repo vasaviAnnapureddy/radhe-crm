@@ -1,0 +1,32 @@
+"""Test setup. Tests use a throwaway SQLite file, never the real Neon database."""
+import os
+import tempfile
+from datetime import date
+from pathlib import Path
+
+import pytest
+
+# Must be set before any app code is imported. These override whatever is in .env.
+_db_file = Path(tempfile.mkdtemp(prefix="radhe_test_")) / "test.db"
+os.environ.update({
+    "DATABASE_URL": f"sqlite:///{_db_file.as_posix()}",
+    "ENVIRONMENT": "test",
+    "JWT_SECRET": "test-only-secret-not-used-anywhere-else",
+    "ADMIN_EMAIL": "admin@test.local",
+    "ADMIN_PASSWORD": "test-only-password",
+    "ADMIN_NAME": "Test Admin",
+    "COOKIE_SECURE": "false",
+})
+
+
+@pytest.fixture(scope="session")
+def world():
+    """The full seed data, built once for the whole test run."""
+    from seed.build import build_world
+    return build_world(date.today())
+
+
+@pytest.fixture(scope="session")
+def snapshot(world):
+    from app.services.snapshot import Snapshot
+    return Snapshot(world.rows, world.today)

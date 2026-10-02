@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+/* Design tokens from docs/DESIGN.md (Section 6.2). Keep these in step with config/brand.yaml. */
+@theme {
+  --color-bg: #f7f5f0;
+  --color-surface: #ffffff;
+  --color-subtle: #efece5;
+  --color-ink: #1c1f1d;
+  --color-muted: #5e635f;
+  --color-line: #e3dfd6;
+  --color-primary: #2f4a3a;
+  --color-sidebar: #1f2e27;
+  --color-accent: #b5643c;
+  --color-good: #3e7c59;
+  --color-watch: #c08a2e;
+  --color-risk: #b4483c;
+  --color-neutral: #7a7f7b;
+  --color-sage: #8fa88f;
+  --color-sand: #c9b38c;
+
+  --font-sans: "Manrope Variable", system-ui, sans-serif;
+  --font-display: "Fraunces Variable", Georgia, serif;
+
+  --radius-card: 10px;
+  --radius-sharp: 2px;
+
+  --shadow-float: 0 12px 32px -12px rgb(28 31 29 / 0.22), 0 2px 6px rgb(28 31 29 / 0.06);
+
+  --animate-sheet-in: sheet-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-fade-in: fade-in 160ms ease-out;
+
+  @keyframes sheet-in {
+    from { transform: translateX(24px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+}
+
+@layer base {
+  html { scroll-behavior: smooth; background: var(--color-bg); color: var(--color-ink); font-family: var(--font-sans); }
+  body { margin: 0; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+  /* Tabular figures everywhere, so numbers line up in tables and cards. */
+  body { font-variant-numeric: tabular-nums; }
+  button, [role="button"], a, summary { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; border-radius: 4px; }
+}
+
+/* Respect people who ask for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+
+@media print {
+  .no-print { display: none !important; }
+}

@@ -1,0 +1,100 @@
+# Risk rules. Read by the rule engine in backend/app/risks (Phase 4).
+# Each rule: id, category, severity, thresholds (params), message template, linked entities.
+# Money is in rupees. 1 Cr = 10000000.
+# Categories: Construction, Collections, Sales, Customer, Inventory, People, Partner.
+
+rules:
+  - id: milestone_slip_blocks_demands
+    category: Construction
+    severity: high
+    params:
+      min_slip_days: 15
+      min_blocked_amount: 10000000        # Rs 1 Cr
+    title: "{tower} delay blocks {blocked_amount} in demands"
+    suggested_action: "Review the recovery plan with {contractor} and tell affected buyers the new date."
+    links: [tower, milestone, contractor, project]
+
+  - id: buyer_overdue
+    category: Collections
+    severity_by_days:                     # highest matching band wins
+      - { min_days: 90, severity: high }
+      - { min_days: 60, severity: medium }
+    title: "{customer} has {overdue_amount} overdue for {days} days"
+    suggested_action: "Collections officer to call the buyer; check loan disbursement status with {bank}."
+    links: [customer, booking, unit]
+
+  - id: bank_disbursement_bottleneck      # story 6: many overdue buyers waiting on one bank
+    category: Collections
+    severity: high
+    params:
+      min_overdue_days: 60
+      min_buyers_same_bank: 5
+    title: "{count} buyers overdue 60+ days are waiting on {bank} disbursement"
+    suggested_action: "Escalate pending disbursements with the {bank} relationship contact."
+    links: [customer]
+
+  - id: buyer_query_unanswered
+    category: Customer
+    severity: medium
+    params:
+      no_contact_days: 21
+      high_if_health_below: 50            # an unhappy buyer who is also unhealthy becomes High
+    title: "{customer} has an open query and no contact for {days} days"
+    suggested_action: "{rm} to reply today and confirm the possession timeline."
+    links: [customer, employee]
+
+  - id: negotiation_idle_high_value
+    category: Sales
+    severity: high
+    params:
+      idle_days: 14
+      min_value: 20000000                 # Rs 2 Cr, counted on one sales person's total idle pipeline
+    title: "{count} negotiations idle {idle_days}+ days, {value} at risk ({owner_name})"
+    suggested_action: "Sales head to review these deals with {owner_name} this week."
+    links: [employee, lead]
+
+  - id: unit_unsold_ageing
+    category: Inventory
+    severity: medium
+    params:
+      min_days_unsold: 270
+    title: "{count} units at {project} unsold for {min_days_unsold}+ days"
+    suggested_action: "Review pricing or offer for these units; brief channel partners."
+    links: [project, unit]
+
+  - id: rm_workload_high
+    category: People
+    severity: medium
+    params:
+      workload_ratio: 1.5                 # x team average
+    title: "{employee} handles {count} buyers vs team average {average}"
+    suggested_action: "Move some buyers to another RM or add support."
+    links: [employee]
+
+  - id: sales_low_conversion
+    category: People
+    severity: medium
+    params:
+      conversion_ratio: 0.5               # below half the team average
+      min_site_visits: 30
+    title: "{employee} converts {conversion}% vs team {team_conversion}%"
+    suggested_action: "Coach on closing; review their idle negotiations together."
+    links: [employee]
+
+  - id: cp_commission_pending
+    category: Partner
+    severity: medium
+    params:
+      min_pending_days: 45
+    title: "Commission to {partner} pending {days} days ({amount})"
+    suggested_action: "Finance to release the commission; this partner brings a large share of bookings."
+    links: [channel_partner, booking]
+
+  - id: interiors_upsell                  # story 7: opportunity, shown as low severity under Customer
+    category: Customer
+    severity: low
+    params:
+      possession_within_days: 180
+    title: "{count} buyers near possession have no interior package ({value} opportunity)"
+    suggested_action: "Design team to share interior packages with these buyers."
+    links: [customer]
