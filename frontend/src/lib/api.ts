@@ -20,17 +20,32 @@ export function withParams(path: string, params?: Params): string {
   return text ? `${path}${path.includes("?") ? "&" : "?"}${text}` : path;
 }
 
+// 502, 503 and 504 mean the request never reached our app (the host's router could not pass it on,
+// or the free server was still waking up). Trying again is safe, so we do it quietly, up to three times.
+const GATEWAY_ERRORS = [502, 503, 504];
+const RETRY_WAITS_MS = [500, 1500, 3000];
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export async function api<T>(path: string, options: { method?: string; body?: unknown; params?: Params } = {}): Promise<T> {
-  let reply: Response;
-  try {
-    reply = await fetch(`/api${withParams(path, options.params)}`, {
-      method: options.method ?? "GET",
-      credentials: "same-origin",
-      headers: options.body ? { "Content-Type": "application/json" } : undefined,
-      body: options.body ? JSON.stringify(options.body) : undefined,
-    });
-  } catch {
-    throw new ApiError(0, "Cannot reach the server. Check that the backend is running.");
+  let reply: Response | null = null;
+  for (let attempt = 0; attempt <= RETRY_WAITS_MS.length; attempt++) {
+    try {
+      reply = await fetch(`/api${withParams(path, options.params)}`, {
+        method: options.method ?? "GET",
+        credentials: "same-origin",
+        headers: options.body ? { "Content-Type": "application/json" } : undefined,
+        body: options.body ? JSON.stringify(options.body) : undefined,
+      });
+    } catch {
+      reply = null;
+    }
+    const retry = (!reply || GATEWAY_ERRORS.includes(reply.status)) && attempt < RETRY_WAITS_MS.length;
+    if (!retry) break;
+    await wait(RETRY_WAITS_MS[attempt]);
+  }
+  if (!reply) throw new ApiError(0, "Cannot reach the server. Please try again in a moment.");
+  if (GATEWAY_ERRORS.includes(reply.status)) {
+    throw new ApiError(reply.status, "The server is waking up. Please try again in a few seconds.");
   }
   if (reply.status === 204) return undefined as T;
   if (!reply.ok) {

@@ -54,7 +54,9 @@ The deployed site uses the same Neon database as your laptop, so the logins are 
 ## Things to know for demo week
 - **Render's free plan sleeps** after about 15 minutes without visitors. The first request after that can take 30 to 60 seconds. Either open the site a few minutes before the demo, or upgrade the backend to the cheapest paid instance for the week.
 - **Neon's free plan** pauses after 5 minutes idle and wakes on the next query, in a second or two.
-- **Reseed on demo morning** so day counts are fresh: on your laptop run `python -m seed.run --reset` (it writes to the same Neon database the deployed site uses). The backend picks up new data within 10 minutes, or straight away if you restart the Render service (**Manual Deploy** -> **Restart**). `TODO: verify` button name.
+- **Reseed on demo morning** so day counts are fresh: on your laptop run `python -m seed.run --reset` (it writes to the same Neon database the deployed site uses). Then **restart the Render service** (**Manual Deploy** -> **Restart service**) so the backend loads the new data. Without a restart it reloads only when the date changes or after six hours.
+- **Random "502" replies (fixed on 02 Oct 2026).** Render's router reuses open connections to the app, and uvicorn closed idle ones after 5 seconds, so some requests landed on a closed connection. The start command now has `--timeout-keep-alive 120`, and the frontend quietly retries a 502, 503 or 504 up to three times. If you ever change the start command, keep that option.
+- **Pushing to `main` redeploys the backend** when files under `backend/` or `render.yaml` change. The site is unavailable for a minute or two while it restarts. Do not push just before a demo.
 - Keep a **recorded demo video** as a backup.
 - The API docs page (`/docs`) is switched off in production.
 

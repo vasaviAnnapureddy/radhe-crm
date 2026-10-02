@@ -18,7 +18,7 @@ from app.db.models import (
 from app.db.session import get_session_factory
 
 IST = timezone(timedelta(hours=5, minutes=30))
-RELOAD_SECONDS = 600
+RELOAD_SECONDS = 6 * 60 * 60  # six hours; a restart reloads at once
 
 
 def today_ist() -> date:
@@ -194,11 +194,20 @@ def load_snapshot() -> Snapshot:
     return Snapshot(rows, today_ist())
 
 
-def get_snapshot() -> Snapshot:
-    """FastAPI dependency. Reloads when the data is 10 minutes old or the date has changed."""
+def _is_fresh() -> bool:
     snap = _cache["snapshot"]
-    fresh = snap and time.time() - _cache["loaded_at"] < RELOAD_SECONDS and snap.today == today_ist()
-    if not fresh:
+    return bool(snap) and time.time() - _cache["loaded_at"] < RELOAD_SECONDS and snap.today == today_ist()
+
+
+def get_snapshot() -> Snapshot:
+    """FastAPI dependency. Reloads when the date changes (India time) or the data is six hours old.
+
+    The data only changes when it is reseeded, and the server is restarted after that, so there is
+    no need to reload often. The second check inside the lock matters: when several requests arrive
+    together and find the data stale, only the first one reloads; the others wait and reuse it.
+    """
+    if not _is_fresh():
         with _lock:
-            _cache["snapshot"], _cache["loaded_at"] = load_snapshot(), time.time()
+            if not _is_fresh():
+                _cache["snapshot"], _cache["loaded_at"] = load_snapshot(), time.time()
     return _cache["snapshot"]

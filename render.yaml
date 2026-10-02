@@ -8,7 +8,11 @@ services:
     region: singapore     # close to India and to the Neon database
     rootDir: backend
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    # --timeout-keep-alive 120: Render's router keeps connections to the app open and reuses them.
+    # Uvicorn's default is to close an idle connection after only 5 seconds. When the router then
+    # reused a connection the app had just closed, the visitor got a random "502". Keeping
+    # connections open longer than the router does removes that.
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --timeout-keep-alive 120
     healthCheckPath: /api/health
     envVars:
       - key: PYTHON_VERSION
