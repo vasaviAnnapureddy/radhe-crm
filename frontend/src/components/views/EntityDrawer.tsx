@@ -1,7 +1,8 @@
 import { useQueries } from "@tanstack/react-query";
 import { ChevronRight, CircleAlert } from "lucide-react";
 import { api } from "@/lib/api";
-import { ENTITY_PATH, type EntityView } from "@/lib/types";
+import { useEntityBase } from "@/lib/entityBase";
+import { entityUrl, type EntityView } from "@/lib/types";
 import { useDrawer } from "@/lib/urlState";
 import { ErrorState, SkeletonBlock } from "../data/States";
 import { StatusPill } from "../data/Value";
@@ -16,10 +17,11 @@ import { BlockView } from "./Blocks";
  */
 export function EntityDrawer() {
   const { stack, popTo, close } = useDrawer();
+  const base = useEntityBase();
   const results = useQueries({
     queries: stack.map((item) => ({
-      queryKey: ["entity", item.type, item.id, "full"],
-      queryFn: () => api<EntityView>(`/${ENTITY_PATH[item.type]}/${item.id}`),
+      queryKey: ["entity", base, item.type, item.id, "full"],
+      queryFn: () => api<EntityView>(entityUrl(base, item.type, item.id)),
       staleTime: 5 * 60 * 1000,
     })),
   });

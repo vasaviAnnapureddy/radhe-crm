@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
-from app.api.deps import current_user, filters, paging
+from app.api.deps import filters, paging, require_admin
 from app.db.models import AuditLog, Employee, Project, Risk, User
 from app.db.session import get_db
 from app.scoring.scores import employee_scorecard
@@ -20,7 +20,7 @@ from app.services.metrics import METRICS, get_metric, get_metric_rows
 from app.services.snapshot import Snapshot, get_snapshot
 from app.services.tables import risk_card
 
-router = APIRouter(dependencies=[Depends(current_user)])
+router = APIRouter(dependencies=[Depends(require_admin)])  # every route below is admin-only
 Snap = Depends(get_snapshot)
 F = Depends(filters)
 
@@ -139,7 +139,7 @@ def risks(category: str | None = None, status: str | None = None, severity: str 
 
 @router.patch("/risks/{risk_id}", tags=["risks"])
 def update_risk(risk_id: uuid.UUID, body: RiskStatusUpdate, s: Snapshot = Snap, db: Session = Depends(get_db),
-                user: User = Depends(current_user)):
+                user: User = Depends(require_admin)):
     """The only data change the console allows. It is written to the audit log."""
     row = db.get(Risk, risk_id)
     if row is None:

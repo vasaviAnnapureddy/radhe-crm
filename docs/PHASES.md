@@ -19,6 +19,7 @@ Build in this exact order. Full details are in `docs/SPEC.md` Section 15. Tick a
 
 ## Day 4
 - [x] **Phase 10: Risks, search, cross-linking.**
+- [ ] **Phase 10B: Employee and customer portals.** (added 02 Oct; code done; tick after the developer signs in as each role on Neon data)
 - [ ] **Phase 11: Polish, deploy, demo.** Anti-congestion checklist, Docker, CI, README, demo script, secret check.
 - [ ] **Phase 12: Should-have pages.** Interiors, Service & Handover, Reports. Only if 1 to 11 are fully done.
 

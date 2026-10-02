@@ -15,6 +15,7 @@ os.environ.update({
     "ADMIN_EMAIL": "admin@test.local",
     "ADMIN_PASSWORD": "test-only-password",
     "ADMIN_NAME": "Test Admin",
+    "PORTAL_PASSWORD": "portal-test-only",
     "COOKIE_SECURE": "false",
 })
 
@@ -22,8 +23,11 @@ os.environ.update({
 @pytest.fixture(scope="session")
 def world():
     """The full seed data, built once for the whole test run."""
-    from seed.build import build_world
-    return build_world(date.today())
+    from app.core.security import hash_password
+    from seed.build import add_portal_users, build_world
+    built = build_world(date.today())
+    add_portal_users(built, hash_password(os.environ["PORTAL_PASSWORD"]))
+    return built
 
 
 @pytest.fixture(scope="session")

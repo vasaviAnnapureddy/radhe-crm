@@ -2,7 +2,7 @@
 from collections import defaultdict
 from datetime import date
 
-from app.db.models import Base, Risk
+from app.db.models import Base, Employee, Risk, User
 from app.risks.engine import detect
 from app.services.snapshot import Snapshot
 from seed.care import add_care
@@ -26,6 +26,22 @@ def build_world(today: date) -> World:
     for risk in detect(Snapshot(w.rows, today)):
         w.add(Risk(**risk, status="open", detected_at=w.at(0), resolved_at=None))
     return w
+
+
+def add_portal_users(w, password_hash: str) -> int:
+    """A login for every employee and every buyer with an active booking.
+
+    They all share one demo password, so the hash is worked out once and reused.
+    Each login is tied to exactly one person: that link decides what they can see.
+    """
+    before = len(w.rows)
+    for employee in (row for row in list(w.rows) if isinstance(row, Employee)):
+        w.add(User(email=employee.email.lower(), name=employee.name, role="employee", is_active=True,
+                   password_hash=password_hash, employee_id=employee.id))
+    for customer in w.active_customers:
+        w.add(User(email=customer.email.lower(), name=customer.name, role="customer", is_active=True,
+                   password_hash=password_hash, customer_id=customer.id))
+    return len(w.rows) - before
 
 
 def insert_rows(conn, rows) -> dict[str, int]:

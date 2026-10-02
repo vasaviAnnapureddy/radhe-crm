@@ -170,7 +170,7 @@ export function ClosingBand() {
           <Eyebrow light>For the Radhe leadership team</Eyebrow>
           <h2 className="mt-4 max-w-2xl font-display text-3xl leading-tight lg:text-4xl">See the chain from the construction site to the bank account, in one screen.</h2>
         </div>
-        <Link to="/login" className="shrink-0 rounded-sharp bg-accent px-6 py-3.5 text-sm font-medium text-white transition-colors duration-200 hover:bg-accent/90">Admin login</Link>
+        <Link to="/login" className="shrink-0 rounded-sharp bg-accent px-6 py-3.5 text-sm font-medium text-white transition-colors duration-200 hover:bg-accent/90">Sign in</Link>
       </Reveal>
     </section>
   );

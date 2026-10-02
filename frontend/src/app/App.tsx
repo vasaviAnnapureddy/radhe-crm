@@ -16,6 +16,7 @@ import Login from "@/pages/public/Login";
 import { AuthGuard } from "./auth";
 import { ConsoleLayout } from "./ConsoleLayout";
 import { NAV } from "./nav";
+import { CUSTOMER_PORTAL, EMPLOYEE_PORTAL, PortalLayout, PortalPage } from "./PortalLayout";
 
 // Server data is cached for a minute, so moving between pages does not refetch everything.
 const queryClient = new QueryClient({
@@ -39,13 +40,22 @@ const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
   {
     path: "/console",
-    element: <AuthGuard><ConsoleLayout /></AuthGuard>, // every page below needs a valid session
+    element: <AuthGuard role="admin"><ConsoleLayout /></AuthGuard>, // every page below needs an admin session
     children: [
       { index: true, element: <Navigate to="overview" replace /> },
       ...NAV.map((item) => ({ path: item.path, element: BUILT[item.path] ?? <Placeholder item={item} /> })),
       { path: "styleguide", element: <Styleguide /> }, // hidden: not in the sidebar
     ],
   },
+  // The two portals. Each person sees only their own pages; the server checks every request.
+  ...[{ portal: EMPLOYEE_PORTAL, role: "employee" as const }, { portal: CUSTOMER_PORTAL, role: "customer" as const }].map(({ portal, role }) => ({
+    path: portal.base,
+    element: <AuthGuard role={role}><PortalLayout portal={portal} /></AuthGuard>,
+    children: [
+      { index: true, element: <Navigate to={portal.menu[0].path} replace /> },
+      { path: ":page", element: <PortalPage portal={portal} /> },
+    ],
+  })),
   { path: "*", element: <Navigate to="/" replace /> },
 ]);
 

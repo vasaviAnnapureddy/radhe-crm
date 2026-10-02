@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.deps import COOKIE_NAME, current_user, make_token
+from app.api.deps import COOKIE_NAME, HOME, current_user, make_token
 from app.core.config import get_settings
 from app.core.security import verify_password
 from app.db.models import AuditLog, User
@@ -27,7 +27,7 @@ def _client(request: Request) -> str:
 
 
 def _user_out(user: User) -> UserOut:
-    return UserOut(id=str(user.id), name=user.name, email=user.email, role=user.role)
+    return UserOut(id=str(user.id), name=user.name, email=user.email, role=user.role, home=HOME.get(user.role, "/"))
 
 
 @router.post("/login", response_model=UserOut)

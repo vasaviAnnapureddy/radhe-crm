@@ -5,6 +5,13 @@ import { useAuthActions, useMe } from "@/app/auth";
 import { Button } from "@/components/ui/button";
 import { BRAND } from "@/lib/brand";
 
+// Sample portal logins from the seed data. Emails are not secrets; the shared password is PORTAL_PASSWORD in .env.
+const DEMO_LOGINS = [
+  ["Home owner (Karthik Reddy)", "karthik.reddy@example.com"],
+  ["Relationship manager (Sneha Rao)", "sneha.rao@radheconstructions.demo"],
+  ["Sales manager (Arjun Varma)", "arjun.varma@radheconstructions.demo"],
+];
+
 const fieldClass = "mt-1.5 h-11 w-full rounded-sharp border border-line bg-surface px-3 text-sm text-ink placeholder:text-neutral";
 
 /** The sign-in form: email, password with show/hide, "keep me signed in", and a clear error line. */
@@ -24,8 +31,11 @@ export function LoginForm() {
     setBusy(true);
     setError(null);
     try {
-      await login(email, password, remember);
-      navigate((location.state as { from?: string } | null)?.from ?? "/console/overview", { replace: true });
+      const user = await login(email, password, remember);
+      // Go back to the page they wanted if it is in their own area; otherwise to their home page.
+      const wanted = (location.state as { from?: string } | null)?.from;
+      const area = user.home.split("/")[1];
+      navigate(wanted?.startsWith(`/${area}/`) ? wanted : user.home, { replace: true });
     } catch (problem) {
       setError((problem as Error).message);
       setBusy(false);
@@ -34,8 +44,8 @@ export function LoginForm() {
 
   return (
     <form onSubmit={submit} className="w-full max-w-sm" noValidate>
-      <h1 className="font-display text-3xl text-ink">Admin sign in</h1>
-      <p className="mt-2 text-sm text-muted">For the Radhe leadership team.</p>
+      <h1 className="font-display text-3xl text-ink">Sign in</h1>
+      <p className="mt-2 text-sm text-muted">For the Radhe team and for home owners. We take you to your own page.</p>
 
       <label className="mt-8 block text-sm font-medium text-ink">
         Email
@@ -65,9 +75,19 @@ export function LoginForm() {
       </Button>
 
       {import.meta.env.VITE_SHOW_DEMO_HINT === "true" && (
-        <p className="mt-6 border-t border-line pt-4 text-xs text-muted">
-          Demo access: use the admin email and password set in the project's .env file.
-        </p>
+        <div className="mt-6 border-t border-line pt-4 text-xs leading-relaxed text-muted">
+          <p className="font-semibold text-ink">Demo accounts</p>
+          <p className="mt-1">Passwords are in the project's .env file, never on this page.</p>
+          <ul className="mt-2 space-y-1.5">
+            <li>Admin: the ADMIN_EMAIL from .env</li>
+            {DEMO_LOGINS.map(([who, address]) => (
+              <li key={address}>
+                {who}:{" "}
+                <button type="button" onClick={() => setEmail(address)} className="font-medium text-primary underline underline-offset-2">{address}</button>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </form>
   );
@@ -75,7 +95,7 @@ export function LoginForm() {
 
 export default function Login() {
   const { data: me } = useMe();
-  if (me) return <Navigate to="/console/overview" replace />;
+  if (me) return <Navigate to={me.home} replace />;
   return (
     <main className="grid min-h-screen bg-bg lg:grid-cols-2">
       {/* Left half: one calm photo and one short line. Hidden on narrow screens so the form comes first. */}

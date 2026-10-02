@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, type ReactNode } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router";
 import { api, SIGNED_OUT_EVENT } from "@/lib/api";
-import type { User } from "@/lib/types";
+import type { Role, User } from "@/lib/types";
 import { Skeleton } from "@/components/data/States";
 
 /** Who is signed in. The answer comes from the server, because the browser cannot read the login cookie. */
@@ -28,8 +28,12 @@ export function useAuthActions() {
   };
 }
 
-/** Wraps every /console page. Without a valid session it sends the visitor to /login. */
-export function AuthGuard({ children }: { children: ReactNode }) {
+/**
+ * Wraps the console and both portals. Without a valid session it sends the visitor to /login.
+ * A signed-in person who opens another role's area is sent to their own home page.
+ * (This is only for a tidy screen: the server refuses the data anyway.)
+ */
+export function AuthGuard({ role, children }: { role: Role; children: ReactNode }) {
   const { data, isPending, isError } = useMe();
   const client = useQueryClient();
   const location = useLocation();
@@ -42,5 +46,6 @@ export function AuthGuard({ children }: { children: ReactNode }) {
 
   if (isPending) return <div className="p-10"><Skeleton className="h-8 w-64" /></div>;
   if (isError || !data) return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
+  if (data.role !== role) return <Navigate to={data.home} replace />;
   return <>{children}</>;
 }

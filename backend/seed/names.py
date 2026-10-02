@@ -30,6 +30,6 @@ def person(w, unique: bool = False) -> str:
         return name
 
 
-def email_for(name: str, number: int, domain: str = "example.com") -> str:
+def email_for(name: str, number, domain: str = "example.com") -> str:
     """example.com is reserved for examples, so these can never reach a real inbox."""
     return f"{name.lower().replace(' ', '.')}{number}@{domain}"

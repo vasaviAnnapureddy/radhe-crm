@@ -42,7 +42,8 @@ def add_org(w) -> None:
                 recent = head is not None and not planted and w.rng.random() < 0.14
                 emp = w.add(Employee(
                     code=f"RC-{number:04d}", name=name, phone=w.phone(),
-                    email=email_for(name, number, "radheconstructions.demo"),
+                    # Story characters get a plain email, so their portal login is easy to remember.
+                    email=email_for(name, "" if planted else number, "radheconstructions.demo"),
                     department_id=dept.id, role_title=role, manager_id=head.id if head else None,
                     joined_on=w.ago(w.rng.randint(3, 180) if recent else w.rng.randint(181, 2500)), status="active",
                 ))

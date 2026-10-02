@@ -46,6 +46,7 @@ def _interactions(w) -> None:
     silent = {c.id: rng.randint(24, 35) for c in rng.sample(sneha_others, 4) + rng.sample(not_sneha, 1)}
     silent[w.karthik.id] = KARTHIK_LAST_CONTACT_DAYS_AGO
     recent_query = {c.id for c in rng.sample([c for c in others if c.id not in silent], 20)}
+    w.waiting_buyers = [c for c in w.active_customers if c.id in silent or c.id in recent_query]
 
     for customer in w.active_customers:
         first_ago = w.first_ago[customer.id]
@@ -123,11 +124,40 @@ def _interiors(w) -> None:
 
 
 def _tasks(w) -> None:
+    """General office tasks for everyone, plus tasks tied to a real lead, buyer or tower for the people who own them."""
     rng = w.rng
-    everyone = [e for team in w.staff.values() for e in team]
-    for _ in range(320):
-        due_ago = rng.randint(-20, 25)
-        done = rng.random() < (0.85 if due_ago > 0 else 0.25)  # most past tasks are done; a few are overdue
-        w.add(Task(title=rng.choice(TASKS), owner_employee_id=rng.choice(everyone).id, entity_type=None,
-                   entity_id=None, priority=rng.choice(["low", "medium", "medium", "high"]), due_on=w.ago(due_ago),
+
+    def task(owner_id, title, due_ago, done=None, kind=None, entity=None, priority=None):
+        if done is None:  # most past tasks are done; a few are overdue
+            done = rng.random() < (0.85 if due_ago > 0 else 0.25)
+        w.add(Task(title=title, owner_employee_id=owner_id, entity_type=kind, entity_id=entity.id if entity else None,
+                   priority=priority or rng.choice(["low", "medium", "medium", "high"]), due_on=w.ago(due_ago),
                    status="done" if done else "open"))
+
+    everyone = [e for team in w.staff.values() for e in team]
+    for _ in range(220):
+        task(rng.choice(everyone).id, rng.choice(TASKS), rng.randint(-20, 25))
+
+    # Sales: a follow-up for every negotiation. Stalled ones are already overdue.
+    for lead, idle_days in w.negotiations:
+        stalled = idle_days >= 14
+        task(lead.owner_employee_id, f"Follow up with {lead.name}", rng.randint(1, 9) if stalled else -rng.randint(1, 6),
+             done=False, kind="lead", entity=lead, priority="high" if stalled else "medium")
+
+    # Relationship managers: reply to waiting buyers today, and three scheduled calls each in the coming week.
+    for buyer in w.waiting_buyers:
+        task(buyer.rm_employee_id, f"Reply to {buyer.name}'s query", rng.randint(0, 3), done=False, kind="customer",
+             entity=buyer, priority="high")
+    by_rm = {}
+    for buyer in w.active_customers:
+        by_rm.setdefault(buyer.rm_employee_id, []).append(buyer)
+    for rm_id, buyers in by_rm.items():
+        for buyer in rng.sample(buyers, min(3, len(buyers))):
+            task(rm_id, f"Call with {buyer.name}: construction and payment update", -rng.randint(0, 7), done=False,
+                 kind="customer", entity=buyer, priority="medium")
+
+    # Site team: keep the stage they are working on up to date.
+    for stage in w.milestones.values():
+        if stage.actual_date is None and stage.percent_complete > 0:
+            task(stage.owner_employee_id, f"Update progress photos: {stage.type.replace('_', ' ')}", -rng.randint(0, 4),
+                 done=False, kind="milestone", entity=stage, priority="medium")

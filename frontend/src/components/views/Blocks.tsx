@@ -1,6 +1,7 @@
+import { Check, Info } from "lucide-react";
 import { cn, TONE_DOT } from "@/lib/cn";
-import { dateTimeText, formatValue } from "@/lib/format";
-import type { Block, Fact, Ref, ScorecardPart, ScorePart } from "@/lib/types";
+import { dateText, dateTimeText, formatValue } from "@/lib/format";
+import type { Block, Fact, JourneyStep, Ref, ScorecardPart, ScorePart } from "@/lib/types";
 import { useDrawer } from "@/lib/urlState";
 import { Cell, RIGHT_ALIGNED } from "../data/Cell";
 import { ChartCard } from "../data/ChartCard";
@@ -94,6 +95,56 @@ function TimelineBlock({ block }: { block: Extract<Block, { kind: "timeline" }> 
   );
 }
 
+/** One honest line the person should read first, for example a delay or a waiting reply. */
+function Notice({ tone, text }: { tone: string; text: string }) {
+  const style = tone === "risk" ? "border-risk/30 bg-risk/10 text-risk" : tone === "good" ? "border-good/30 bg-good/10 text-good" : "border-line bg-subtle text-muted";
+  return (
+    <p className={cn("flex items-start gap-2.5 rounded-card border px-4 py-3 text-sm font-medium", style)}>
+      <Info size={16} strokeWidth={1.75} className="mt-0.5 shrink-0" />{text}
+    </p>
+  );
+}
+
+const STEP_STYLE: Record<JourneyStep["state"], string> = {
+  done: "border-good bg-good text-white", current: "border-primary bg-surface text-primary",
+  issue: "border-risk bg-risk text-white", upcoming: "border-line bg-surface text-neutral",
+};
+
+/** A buyer's path from booking to living in the home. The current step is marked "You are here". */
+function Journey({ block }: { block: Extract<Block, { kind: "journey" }> }) {
+  return (
+    <section className="rounded-card border border-line bg-surface p-6">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="font-display text-xl text-ink">{block.title}</h2>
+        {typeof block.unit !== "string" && <EntityLink entity={block.unit} className="text-[13px] font-normal">See unit details</EntityLink>}
+      </div>
+      <p className="mt-4 rounded-md bg-subtle px-4 py-3 text-sm text-ink">
+        <span className="font-semibold">What happens next: </span>{block.next_step}
+      </p>
+      <ol className="mt-6">
+        {block.steps.map((step, i) => (
+          <li key={step.key} className="relative flex gap-4 pb-6 last:pb-0">
+            {i < block.steps.length - 1 && <span className={cn("absolute left-[13px] top-7 h-full w-px", step.state === "done" ? "bg-good" : "bg-line")} />}
+            <span className={cn("relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 text-xs font-semibold", STEP_STYLE[step.state])}>
+              {step.state === "done" ? <Check size={14} strokeWidth={2.5} /> : step.state === "issue" ? "!" : i + 1}
+            </span>
+            <div className={cn("min-w-0 flex-1 rounded-md", step.here && "-mt-2 border border-line bg-bg px-4 py-3")}>
+              <div className="flex flex-wrap items-baseline justify-between gap-x-4">
+                <h3 className={cn("text-sm font-semibold", step.state === "upcoming" ? "text-muted" : "text-ink")}>
+                  {step.label}
+                  {step.here && <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-white">You are here</span>}
+                </h3>
+                {step.date && <span className="text-xs text-muted">{dateText(step.date)}</span>}
+              </div>
+              <p className={cn("mt-1 text-[13px] leading-relaxed", step.state === "issue" ? "text-ink" : "text-muted")}>{step.text}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
 /** Draws one block of a drawer tab. The backend decides which blocks a tab has. */
 export function BlockView({ block }: { block: Block }) {
   switch (block.kind) {
@@ -109,5 +160,7 @@ export function BlockView({ block }: { block: Block }) {
     case "score": return <ScoreBlock {...block} />;
     case "scorecard": return <ScorecardBlock block={block} />;
     case "chart": return <ChartCard chart={block.chart} height={220} />;
+    case "notice": return <Notice tone={block.tone} text={block.text} />;
+    case "journey": return <Journey block={block} />;
   }
 }

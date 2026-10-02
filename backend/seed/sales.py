@@ -212,6 +212,8 @@ def _bookings(w) -> None:
                              lost_reason=None)
                 _activities(w, lead, owner, created_ago, ago, rng.randint(3, 5))
                 w.visit_pool[owner.id].append((lead, created_ago, ago))
+                if is_karthik:  # a plain email, so his portal login is easy to remember
+                    lead.email = email_for(name, "")
                 customer = w.add(Customer(lead_id=lead.id, name=name, phone=lead.phone, email=lead.email, type=kind,
                                           is_nri=kind == "nri", country=country, city=city,
                                           rm_employee_id=owner.id))  # the real RM is set in _assign_rms
@@ -296,6 +298,7 @@ def _open_leads(w) -> None:
 
     free_units = [u for p in ("Radhe Skyline", "Radhe Aranya") for u in w.units[w.projects[p].id]
                   if u.status == "available"]
+    w.negotiations = []  # (lead, days since last activity); the task generator uses it
     for stage, count, (newest, oldest) in OPEN_STAGES:
         for i in range(count):
             project, created_ago = any_project(), rng.randint(newest, oldest)
@@ -308,6 +311,7 @@ def _open_leads(w) -> None:
                 owner, last_ago, cr = deals[i]
                 created_ago = max(created_ago, last_ago + 5)
                 lead = _lead(w, owner, stage, created_ago, project, cr or budget(project))
+                w.negotiations.append((lead, last_ago))
             else:
                 owner, last_ago = w.sales_team[i % len(w.sales_team)], rng.randint(0, min(created_ago, 12))
                 if stage == "blocked":  # a token is paid and one home is held for this lead

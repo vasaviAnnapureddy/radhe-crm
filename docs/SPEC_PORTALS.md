@@ -1,6 +1,8 @@
 # MEGA PROMPT ADDENDUM: Employee and Customer portals (small, read-only)
 
-> **STATUS: PARKED DRAFT (02 Oct 2026). Do not build from this yet.** The developer decided to finish the admin console first (Phases 7 to 11 of `docs/SPEC.md`) and look at portals afterwards. She also wants hover cards and drawers in the portals, so Sections 2.4, 8 (`strip_refs`) and 12 of this draft must be revised before building: entity views would need per-role ownership checks instead of being removed. `docs/PHASES.md` is unchanged and Phase 12 is not dropped.
+> **STATUS: BUILT on 02 Oct 2026, with changes from this draft.** What was actually built is described in `docs/PROGRESS.md` ("Phase 10B: portals"). Main differences: every employee and buyer gets a login (not three), each portal has five menu items, hover cards and drawers ARE kept (checked per person on the server), and the customer home page is a step-by-step journey. The text below is the original draft, kept for history.
+>
+> **Earlier status: PARKED DRAFT (02 Oct 2026).** The developer decided to finish the admin console first (Phases 7 to 11 of `docs/SPEC.md`) and look at portals afterwards. She also wants hover cards and drawers in the portals, so Sections 2.4, 8 (`strip_refs`) and 12 of this draft must be revised before building: entity views would need per-role ownership checks instead of being removed. `docs/PHASES.md` is unchanged and Phase 12 is not dropped.
 
 > How to use: this file adds to `docs/SPEC.md`. Read `docs/PROGRESS.md` first, then this file. It is built as **Phase 10B**, after Phase 10 and before Phase 11. All working rules in `docs/SPEC.md` Section 0 still apply (explain each file, simple language, stop at the end for `continue`).
 >

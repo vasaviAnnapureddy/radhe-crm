@@ -37,6 +37,16 @@ def current_user(request: Request, s: Snapshot = Depends(get_snapshot)) -> User:
     return user
 
 
+HOME = {"admin": "/console/overview", "employee": "/employee/day", "customer": "/my/journey"}
+
+
+def require_admin(user: User = Depends(current_user)) -> User:
+    """The whole console is for admins only. Employees and buyers get 403 here."""
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="The console is for administrators only.")
+    return user
+
+
 def filters(s: Snapshot = Depends(get_snapshot), date_from: date | None = None, date_to: date | None = None,
             project_id: uuid.UUID | None = None) -> Filters:
     """The global filters. Default range: the last 90 days."""

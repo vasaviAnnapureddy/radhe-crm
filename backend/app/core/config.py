@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     admin_email: str = ""
     admin_password: str = ""
     admin_name: str = ""
+    # One shared demo password for every employee and customer login. Empty = no portal logins are seeded.
+    portal_password: str = ""
 
     @field_validator("database_url")
     @classmethod

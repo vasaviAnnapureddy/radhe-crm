@@ -41,7 +41,20 @@ export type Block =
   | { kind: "timeline"; items: { at: string | null; title: string; text: string; tone: Tone }[] }
   | { kind: "score"; title: string; score: number; parts: ScorePart[]; formula: string }
   | { kind: "scorecard"; score: number; parts: ScorecardPart[]; formula: string; needs_attention: boolean }
-  | { kind: "chart"; chart: Chart };
+  | { kind: "chart"; chart: Chart }
+  | { kind: "notice"; tone: Tone; text: string }
+  | { kind: "journey"; title: string; unit: Ref | string; next_step: string; steps: JourneyStep[] };
+
+/** One step of a buyer's journey, from booking to living in the home. */
+export interface JourneyStep {
+  key: string; label: string; state: "done" | "current" | "upcoming" | "issue"; date: string | null; text: string; here: boolean;
+}
+
+/** A page of the employee or customer portal: the server sends everything the page shows. */
+export interface PortalReply {
+  title: string; subtitle: string; blocks: Block[];
+  kpis: { label: string; value: number; kind: string; note: string | null }[];
+}
 
 export interface EntityView {
   type: EntityType; id: string; title: string; subtitle: string; status: StatusCell; facts: Fact[];
@@ -54,7 +67,17 @@ export interface RiskCard {
   refs: Ref[]; suggested_action: string; status: "open" | "acknowledged" | "resolved"; owner: Ref | null;
 }
 
-export interface User { id: string; name: string; email: string; role: string }
+export type Role = "admin" | "employee" | "customer";
+/** `home` is where this person lands after signing in: the console, the employee portal or the customer portal. */
+export interface User { id: string; name: string; email: string; role: Role; home: string }
+
+/**
+ * Where entity quick views and drawers are fetched from. Admin pages use each entity's own route
+ * (/customers/{id}); portals use /portal/entity/{type}/{id}, which checks the record is yours.
+ */
+export function entityUrl(base: string | null, type: EntityType, id: string): string {
+  return base ? `${base}/${type}/${id}` : `/${ENTITY_PATH[type]}/${id}`;
+}
 
 /** Where each entity type lives in the API. */
 export const ENTITY_PATH: Record<EntityType, string> = {

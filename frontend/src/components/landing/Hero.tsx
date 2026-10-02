@@ -21,7 +21,7 @@ export function Hero() {
             ))}
           </ul>
           <Link to="/login" className="rounded-sharp bg-accent px-4 py-2.5 text-sm font-medium transition-colors duration-200 hover:bg-accent/90">
-            Admin login
+            Sign in
           </Link>
         </div>
       </nav>
@@ -34,7 +34,7 @@ export function Hero() {
         </p>
         <div className="mt-9 flex flex-wrap gap-3">
           <a href="#about" className="rounded-sharp bg-white px-5 py-3 text-sm font-medium text-ink transition-colors duration-200 hover:bg-bg">Discover Radhe</a>
-          <Link to="/login" className="rounded-sharp border border-white/60 px-5 py-3 text-sm font-medium transition-colors duration-200 hover:bg-white/10">Admin login</Link>
+          <Link to="/login" className="rounded-sharp border border-white/60 px-5 py-3 text-sm font-medium transition-colors duration-200 hover:bg-white/10">Sign in</Link>
         </div>
       </div>
     </header>

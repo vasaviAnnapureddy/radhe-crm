@@ -13,7 +13,7 @@ from app.core.config import get_settings
 from app.core.security import hash_password
 from app.db.models import Base, Project, User
 from app.db.session import get_engine
-from seed.build import build_world, insert_rows
+from seed.build import add_portal_users, build_world, insert_rows
 
 
 def wipe(conn) -> None:
@@ -40,6 +40,11 @@ def main() -> None:
     world = build_world(args.as_of)
     world.add(User(email=settings.admin_email.lower(), name=settings.admin_name, role="admin", is_active=True,
                    password_hash=hash_password(settings.admin_password)))
+    if settings.portal_password:
+        count = add_portal_users(world, hash_password(settings.portal_password))
+        print(f"Added {count:,} portal logins (employees and buyers). They share the PORTAL_PASSWORD from .env.")
+    else:
+        print("PORTAL_PASSWORD is empty in .env, so no employee or customer logins were created.")
 
     # One transaction: if anything fails, the database is left exactly as it was.
     with get_engine().begin() as conn:

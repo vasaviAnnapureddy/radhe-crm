@@ -14,7 +14,8 @@ class UserOut(BaseModel):
     id: str
     name: str
     email: str
-    role: str
+    role: str  # admin, employee or customer
+    home: str  # where this person lands after signing in
 
 
 class RiskStatusUpdate(BaseModel):

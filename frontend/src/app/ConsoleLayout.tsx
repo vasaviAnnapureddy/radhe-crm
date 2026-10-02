@@ -6,7 +6,8 @@ import { EntityDrawer } from "@/components/views/EntityDrawer";
 import { ExplainDrawer } from "@/components/views/ExplainDrawer";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
-import type { Metric } from "@/lib/types";
+import { Popover } from "radix-ui";
+import type { Metric, RiskCard } from "@/lib/types";
 import { keepFilters, RANGES, useFilters } from "@/lib/urlState";
 import { useAuthActions, useMe } from "./auth";
 import { NAV } from "./nav";
@@ -47,6 +48,46 @@ function Sidebar() {
   );
 }
 
+/** The bell. Clicking it opens the list of high-priority alerts; each one, and "See all", leads to the Risks page. */
+function Alerts({ count, risksLink }: { count: number; risksLink: { pathname: string; search: string } }) {
+  const [open, setOpen] = useState(false);
+  const { data, isPending } = useQuery({
+    queryKey: ["risks"], queryFn: () => api<{ items: RiskCard[] }>("/risks"), enabled: open,
+  });
+  const urgent = (data?.items ?? []).filter((risk) => risk.severity === "high" && risk.status !== "resolved");
+  return (
+    <Popover.Root open={open} onOpenChange={setOpen}>
+      <Popover.Trigger aria-label={`${count} high risks`} title="High-priority alerts"
+        className="relative flex h-9 w-9 items-center justify-center rounded-md text-muted transition-colors duration-150 hover:bg-subtle hover:text-ink data-[state=open]:bg-subtle data-[state=open]:text-ink">
+        <Bell size={17} strokeWidth={1.75} />
+        {count > 0 && <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-risk px-1 text-[10px] font-semibold text-white">{count}</span>}
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Content align="end" sideOffset={8} className="z-50 w-[380px] rounded-card border border-line bg-surface shadow-float animate-fade-in">
+          <p className="border-b border-line px-4 py-3 text-sm font-semibold text-ink">
+            {count} high-priority {count === 1 ? "alert" : "alerts"}
+          </p>
+          <ul className="max-h-[360px] overflow-y-auto">
+            {isPending && <li className="px-4 py-4 text-sm text-muted">Loading alerts</li>}
+            {!isPending && !urgent.length && <li className="px-4 py-6 text-center text-sm text-muted">Nothing urgent right now.</li>}
+            {urgent.map((risk) => (
+              <li key={risk.id} className="border-b border-line last:border-0">
+                <Link to={risksLink} onClick={() => setOpen(false)} className="block px-4 py-3 transition-colors duration-150 hover:bg-bg">
+                  <span className="block text-[13px] font-medium leading-snug text-ink">{risk.title}</span>
+                  <span className="mt-0.5 block text-xs text-muted">{risk.category} · {risk.status === "acknowledged" ? "Acknowledged" : "Open"}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <Link to={risksLink} onClick={() => setOpen(false)} className="block border-t border-line px-4 py-3 text-center text-[13px] font-medium text-primary hover:bg-bg">
+            See all risks and alerts
+          </Link>
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
+  );
+}
+
 function TopBar({ onSearch }: { onSearch: () => void }) {
   const { range, projectId, setRange, setProject, params } = useFilters();
   const { search } = useLocation();
@@ -67,11 +108,7 @@ function TopBar({ onSearch }: { onSearch: () => void }) {
           <option value="">All projects</option>
           {projects?.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
-        <Link to={{ pathname: "/console/risks", search: keepFilters(search) }} aria-label={`${alerts?.value ?? 0} high risks`} title="High-priority risks"
-          className="relative flex h-9 w-9 items-center justify-center rounded-md text-muted transition-colors duration-150 hover:bg-subtle hover:text-ink">
-          <Bell size={17} strokeWidth={1.75} />
-          {Boolean(alerts?.value) && <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-risk px-1 text-[10px] font-semibold text-white">{alerts!.value}</span>}
-        </Link>
+        <Alerts count={alerts?.value ?? 0} risksLink={{ pathname: "/console/risks", search: keepFilters(search) }} />
       </div>
     </header>
   );

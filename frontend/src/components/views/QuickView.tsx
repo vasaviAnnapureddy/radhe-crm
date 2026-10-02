@@ -2,7 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { CircleAlert } from "lucide-react";
 import { api } from "@/lib/api";
 import { dateText } from "@/lib/format";
-import { ENTITY_PATH, type EntityView, type Fact, type Ref } from "@/lib/types";
+import { useEntityBase } from "@/lib/entityBase";
+import { entityUrl, type EntityView, type Fact, type Ref } from "@/lib/types";
 import { ErrorState, SkeletonBlock } from "../data/States";
 import { StatusPill, Value } from "../data/Value";
 
@@ -51,9 +52,10 @@ export function QuickView({ view }: { view: EntityView }) {
 }
 
 export function useEntity(entity: { type: Ref["type"]; id: string }, quick: boolean, enabled = true) {
+  const base = useEntityBase();
   return useQuery({
-    queryKey: ["entity", entity.type, entity.id, quick ? "quick" : "full"],
-    queryFn: () => api<EntityView>(`/${ENTITY_PATH[entity.type]}/${entity.id}`, { params: { view: quick ? "quick" : "full" } }),
+    queryKey: ["entity", base, entity.type, entity.id, quick ? "quick" : "full"],
+    queryFn: () => api<EntityView>(entityUrl(base, entity.type, entity.id), { params: { view: quick ? "quick" : "full" } }),
     enabled,
     staleTime: 5 * 60 * 1000,
   });

@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, FastAPI
 
-from app.api import auth, console, health, public
+from app.api import auth, console, health, portal, public
 from app.core.config import get_settings
 from app.core.logging import setup_logging
 from app.services.snapshot import get_snapshot
@@ -42,6 +42,7 @@ api = APIRouter(prefix="/api")
 api.include_router(health.router)
 api.include_router(auth.router)
 api.include_router(public.router)
-api.include_router(console.router)
+api.include_router(portal.router)   # employees and buyers: their own records only
+api.include_router(console.router)  # admins only
 
 app.include_router(api)
