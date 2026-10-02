@@ -28,18 +28,20 @@ def build_world(today: date) -> World:
     return w
 
 
-def add_portal_users(w, password_hash: str) -> int:
+def add_portal_users(w, password_hash: str, sample_emails: dict | None = None) -> int:
     """A login for every employee and every buyer with an active booking.
 
     They all share one demo password, so the hash is worked out once and reused.
     Each login is tied to exactly one person: that link decides what they can see.
     """
+    # `sample_emails` maps a person's name to the login email set for them in .env (the three story characters).
+    login = lambda person: ((sample_emails or {}).get(person.name) or person.email).strip().lower()  # noqa: E731
     before = len(w.rows)
     for employee in (row for row in list(w.rows) if isinstance(row, Employee)):
-        w.add(User(email=employee.email.lower(), name=employee.name, role="employee", is_active=True,
+        w.add(User(email=login(employee), name=employee.name, role="employee", is_active=True,
                    password_hash=password_hash, employee_id=employee.id))
     for customer in w.active_customers:
-        w.add(User(email=customer.email.lower(), name=customer.name, role="customer", is_active=True,
+        w.add(User(email=login(customer), name=customer.name, role="customer", is_active=True,
                    password_hash=password_hash, customer_id=customer.id))
     return len(w.rows) - before
 

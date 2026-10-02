@@ -105,7 +105,8 @@ def my_task_row(s, t: Task) -> dict:
     late = t.status == "open" and t.due_on < s.today
     return {"title": t.title, "about": ref(t.entity_type, target, label) if target else None,
             "priority": status(t.priority), "due_on": t.due_on,
-            "status": status("overdue") if late else status(t.status, "watch" if t.status == "open" else None)}
+            # "Overdue" is kept for money. A late task says "Past due date".
+            "status": status("overdue", label="Past due date") if late else status(t.status, "watch" if t.status == "open" else None)}
 
 
 # ---------- employee portal ----------
@@ -184,8 +185,11 @@ def employee_page(s, user: User, name: str) -> dict:
             buyers = rm_stats(s)["people"].get(emp.id, {"buyers": []})["buyers"]
             waiting = [q for c in buyers for q in s.open_queries(c.id)]
             owing = sorted((c for c in buyers if s.customer_overdue(c.id)[0] > 0), key=lambda c: -s.customer_overdue(c.id)[0])
+            late = sorted((d for c in owing for b in s.bookings_of(c.id) for d in s.demands(b) if s.late(d)), key=lambda d: -s.late(d))
+            total = sum(s.left(d) for d in late)
             blocks = [block(s, "interactions", waiting, "Queries waiting for my reply"),
-                      block(s, "customers", owing, "My buyers with overdue payments"),
+                      block(s, "demands", late, f"Overdue payments of my buyers: {inr(total)} unpaid across {len(late)} payments"),
+                      block(s, "customers", owing, f"My buyers with overdue payments ({len(owing)})"),
                       block(s, "customers", buyers, "All my buyers")]
         elif is_site:
             blocks = [block(s, "milestones", sorted(s.kids(ConstructionMilestone, "owner_employee_id", emp.id), key=lambda m: m.planned_date), "My milestones"),
@@ -268,7 +272,9 @@ def _journey(s, booking: Booking) -> dict:
         pay_text = f"Your next payment of {inr(s.left(upcoming))} is due on {upcoming.due_on:%d %b %Y}."
     elif waiting:
         name = s.one(PlanMilestone, waiting.plan_milestone_id).name
-        pay_text = f"Nothing is due now. Your next payment of {inr(num(waiting.amount))} will be asked for at: {name}."
+        pay_text = f"Nothing is due now. Your next payment of {inr(num(waiting.amount))} will be asked for when this stage is finished: {name}."
+        if waiting.construction_milestone_id in s.delayed:
+            pay_text += f" That stage is running {s.slip(s.delayed[waiting.construction_milestone_id])} days late, so the payment is on hold."
     else:
         pay_text = "All payments are complete. Thank you."
     all_paid = not upcoming and not waiting
@@ -310,6 +316,51 @@ def _journey(s, booking: Booking) -> dict:
             "next_step": steps[here].get("next") or steps[here]["text"], "steps": steps}
 
 
+def _home_facts(s, booking: Booking) -> dict:
+    """Everything about the home itself: which project, tower and floor, how big, which way it faces."""
+    unit = s.unit(booking)
+    project, tower = s.one(Project, unit.project_id), s.one(Tower, unit.tower_id)
+    return facts_block([
+        fact("Project", f"{project.name}, {project.locality}"), fact("Tower", tower.name if tower else None),
+        fact("Floor", f"{unit.floor} of {tower.floors}" if tower and unit.floor else None), fact("Unit number", unit.unit_no),
+        fact("Type", unit.config), fact("Facing", unit.facing),
+        fact("Carpet area", num(unit.carpet_sft) or None, "sqft"), fact("Super built-up area", num(unit.sba_sft) or None, "sqft"),
+        fact("Plot area", num(unit.plot_sqyd) or None, "sqyd"), fact("Agreement value", num(booking.agreement_value), "money"),
+        fact("Payment plan", s.one(PaymentPlan, booking.payment_plan_id).name), fact("Booked on", booking.booked_on, "date"),
+    ], f"My home: unit {unit.unit_no}")
+
+
+def _payment_stages(s, booking: Booking) -> list:
+    """The payment plan in plain words, then every payment in order with what has happened to it."""
+    plan = s.one(PaymentPlan, booking.payment_plan_id)
+    demands = sorted(s.demands(booking), key=lambda d: s.one(PlanMilestone, d.plan_milestone_id).seq)
+    rows, paid_count, linked = [], 0, 0
+    for n, d in enumerate(demands, start=1):
+        step = s.one(PlanMilestone, d.plan_milestone_id)
+        linked += bool(step.construction_milestone_type)
+        receipts = s.kids(Receipt, "demand_id", d.id)
+        if d.due_on and s.left(d) == 0:
+            paid_count += 1
+            state, when = status("paid"), max(r.received_on for r in receipts) if receipts else d.due_on
+        elif s.late(d):
+            state, when = status("overdue", label=f"Overdue by {s.late(d)} days"), d.due_on
+        elif d.due_on:
+            state, when = status("raised", label="Due"), d.due_on
+        elif d.construction_milestone_id in s.delayed:
+            state, when = status("blocked", "risk", "Held: this stage is running late"), None
+        else:
+            state, when = status("not_raised", "neutral", "Not due yet: asked for when this stage is reached"), None
+        rows.append({"id": str(d.id), "type": "demand", "target_id": str(d.id), "n": n, "stage": step.name,
+                     "share": num(step.percent), "amount": num(d.amount), "when": when, "state": state})
+    text = (f"Your payment plan is the {plan.name.lower()}, with {len(demands)} payments. "
+            + (f"{linked} of them are tied to construction: each one is asked for only when that stage of the building is finished. " if linked else "")
+            + f"You have made {paid_count} of the {len(demands)} payments.")
+    return [notice(text, "neutral"),
+            {"kind": "table", "title": f"All {len(demands)} payments, in order", "rows": rows,
+             "columns": [col("n", "No.", "number"), col("stage", "Payment stage"), col("share", "Share", "percent"),
+                         col("amount", "Amount", "money"), col("when", "Paid or due on", "date"), col("state", "Status", "status")]}]
+
+
 def customer_page(s, user: User, name: str) -> dict:
     me = s.one(Customer, user.customer_id)
     bookings = s.bookings_of(me.id)
@@ -317,7 +368,10 @@ def customer_page(s, user: User, name: str) -> dict:
     demands = [d for b in bookings for d in s.demands(b)]
 
     if name == "journey":
-        return page(f"Welcome, {me.name.split()[0]}", "Where you are, and what comes next.", [_journey(s, b) for b in bookings])
+        blocks = []
+        for b in bookings:
+            blocks += [_journey(s, b), _home_facts(s, b)] + _payment_stages(s, b)
+        return page(f"Welcome, {me.name.split()[0]}", "Where you are, and what comes next.", blocks)
 
     if name == "payments":
         value = sum(num(b.agreement_value) for b in bookings)
@@ -345,6 +399,12 @@ def customer_page(s, user: User, name: str) -> dict:
                 continue
             tower = s.one(Tower, unit.tower_id)
             stages = sorted(s.kids(ConstructionMilestone, "tower_id", tower.id), key=lambda m: m.seq)
+            done = sum(1 for m in stages if m.actual_date)
+            blocks.append(notice(
+                f"{tower.name} has {tower.floors} floors; your home is on floor {unit.floor}. We track the building in "
+                f"{len(stages)} stages: {', '.join(STAGE_LABELS[m.type].lower() for m in stages)}. "
+                f"{done} of {len(stages)} are complete. A floor slab is the concrete floor of that storey; "
+                "we report the slabs that your payments are tied to, not every floor.", "neutral"))
             for m in stages:
                 if m.id in s.delayed:
                     blocks.append(notice(f"The {STAGE_LABELS[m.type].lower()} was planned for {m.planned_date:%d %b %Y} and is "
@@ -369,9 +429,9 @@ def customer_page(s, user: User, name: str) -> dict:
         return page("Requests", "Your messages to us and our replies.", blocks,
                     [kpi("Waiting for our reply", len(waiting)), kpi("Open service requests", sum(t.status != "resolved" for t in tickets))])
 
-    units = ", ".join(s.unit(b).unit_no for b in bookings)
-    return page("My profile", "Your details as we hold them.", [
+    return page("My profile", "Your details and your home, as we hold them.", [
         facts_block([fact("Name", me.name), fact("Phone", me.phone), fact("Email", me.email), fact("City", me.city),
-                     fact("Country", me.country), fact("My units", units)]),
+                     fact("Country", me.country)], "About me"),
+        *[_home_facts(s, b) for b in bookings],
         facts_block([fact("Name", rm.name), fact("Email", rm.email), fact("Phone", rm.phone)], "My relationship manager"),
     ])

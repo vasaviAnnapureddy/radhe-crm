@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     admin_name: str = ""
     # One shared demo password for every employee and customer login. Empty = no portal logins are seeded.
     portal_password: str = ""
+    # Easy-to-remember logins for the three story characters. Empty = they keep their generated email.
+    portal_customer_email: str = ""  # Karthik Reddy, home owner
+    portal_rm_email: str = ""        # Sneha Rao, relationship manager
+    portal_sales_email: str = ""     # Arjun Varma, sales manager
 
     @field_validator("database_url")
     @classmethod

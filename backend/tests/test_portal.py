@@ -66,6 +66,17 @@ def test_customer_sees_his_own_journey_and_nothing_else(app_client, snapshot):
     build = next(step for step in home["steps"] if step["key"] == "build")
     assert build["here"] and build["state"] == "issue" and "days late" in build["text"]
 
+    # His home is described in full, and all 11 payments of his plan are listed with what happened to each.
+    facts = {f["label"]: f["value"] for f in journey["blocks"][1]["items"]}
+    assert facts["Project"] == "Radhe Skyline, Narsingi" and facts["Tower"] == "Tower B" and facts["Type"] == "4 BHK"
+    assert facts["Floor"].endswith("of 30") and facts["Payment plan"] == "Construction-linked plan"
+    assert "11 payments" in journey["blocks"][2]["text"] and "5 of the 11" in journey["blocks"][2]["text"]
+    stages = journey["blocks"][3]["rows"]
+    assert [row["stage"] for row in stages][3:6] == ["5th floor slab", "10th floor slab", "14th floor slab"]
+    assert [row["state"]["label"] for row in stages][:6] == ["Paid"] * 5 + ["Held: this stage is running late"]
+    profile = app_client.get("/api/portal/customer/profile").json()
+    assert profile["blocks"][1]["title"].startswith("My home: unit B-")
+
     payments = app_client.get("/api/portal/customer/payments").json()
     assert payments["kpis"][1]["note"] == "45% of the total"
     requests = app_client.get("/api/portal/customer/requests").json()
@@ -110,6 +121,12 @@ def test_employee_sees_only_assigned_records(app_client, snapshot):
     assert day["kpis"][0] == {"label": "My buyers", "value": 62, "kind": "number", "note": "Team average 38"}
     work = app_client.get("/api/portal/employee/work").json()
     assert len(work["blocks"][-1]["rows"]) == 62
+    overdue = work["blocks"][1]  # the money her buyers owe, with the unpaid amount in view
+    assert overdue["title"].startswith("Overdue payments of my buyers: ₹")
+    assert next(c for c in overdue["columns"] if c["key"] == "outstanding")["default"] is True
+    assert all(row["outstanding"] > 0 for row in overdue["rows"])
+    day_tasks = day["blocks"][1]["rows"]
+    assert day_tasks and all(row["status"]["label"] == "Past due date" for row in day_tasks)
     assert app_client.get("/api/portal/employee/meetings").json()["blocks"][0]["title"] == "Scheduled calls with buyers"
 
     mine = next(c for c in snapshot.all(Customer) if c.name == S.KARTHIK)

@@ -5,13 +5,6 @@ import { useAuthActions, useMe } from "@/app/auth";
 import { Button } from "@/components/ui/button";
 import { BRAND } from "@/lib/brand";
 
-// Sample portal logins from the seed data. Emails are not secrets; the shared password is PORTAL_PASSWORD in .env.
-const DEMO_LOGINS = [
-  ["Home owner (Karthik Reddy)", "karthik.reddy@example.com"],
-  ["Relationship manager (Sneha Rao)", "sneha.rao@radheconstructions.demo"],
-  ["Sales manager (Arjun Varma)", "arjun.varma@radheconstructions.demo"],
-];
-
 const fieldClass = "mt-1.5 h-11 w-full rounded-sharp border border-line bg-surface px-3 text-sm text-ink placeholder:text-neutral";
 
 /** The sign-in form: email, password with show/hide, "keep me signed in", and a clear error line. */
@@ -77,15 +70,13 @@ export function LoginForm() {
       {import.meta.env.VITE_SHOW_DEMO_HINT === "true" && (
         <div className="mt-6 border-t border-line pt-4 text-xs leading-relaxed text-muted">
           <p className="font-semibold text-ink">Demo accounts</p>
-          <p className="mt-1">Passwords are in the project's .env file, never on this page.</p>
-          <ul className="mt-2 space-y-1.5">
-            <li>Admin: the ADMIN_EMAIL from .env</li>
-            {DEMO_LOGINS.map(([who, address]) => (
-              <li key={address}>
-                {who}:{" "}
-                <button type="button" onClick={() => setEmail(address)} className="font-medium text-primary underline underline-offset-2">{address}</button>
-              </li>
-            ))}
+          <p className="mt-1">The emails and passwords are in the project's .env file, never on this page:</p>
+          <ul className="mt-2 space-y-1">
+            <li>Admin: ADMIN_EMAIL and ADMIN_PASSWORD</li>
+            <li>Home owner: PORTAL_CUSTOMER_EMAIL</li>
+            <li>Relationship manager: PORTAL_RM_EMAIL</li>
+            <li>Sales manager: PORTAL_SALES_EMAIL</li>
+            <li>All three portal accounts use PORTAL_PASSWORD</li>
           </ul>
         </div>
       )}

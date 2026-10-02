@@ -75,9 +75,9 @@ def booking_row(s, b: Booking) -> dict:
 
 
 @table("demands", "demand", [
-    col("customer", "Customer", "ref"), col("unit", "Unit", "ref"), col("milestone", "Milestone"),
-    col("amount", "Amount", "money"), col("due_on", "Due date", "date"), col("days_overdue", "Days overdue", "days"),
-    col("status", "Status", "status"), col("outstanding", "Unpaid", "money", False), col("bank", "Bank", default=False),
+    col("customer", "Customer", "ref"), col("milestone", "Payment stage"), col("amount", "Amount", "money"),
+    col("outstanding", "Unpaid", "money"), col("due_on", "Due date", "date"), col("days_overdue", "Days overdue", "days"),
+    col("status", "Status", "status"), col("unit", "Unit", "ref", False), col("bank", "Bank", default=False),
     col("reminders", "Reminders sent", "number", False), col("raised_on", "Raised on", "date", False)])
 def demand_row(s, d: Demand) -> dict:
     booking = s.one(Booking, d.booking_id)
@@ -92,7 +92,7 @@ def demand_row(s, d: Demand) -> dict:
         state = status(d.status)
     return {"customer": ref("customer", s.one(Customer, booking.customer_id)), "unit": unit_ref(s, s.unit(booking)),
             "milestone": s.one(PlanMilestone, d.plan_milestone_id).name, "amount": num(d.amount), "due_on": d.due_on,
-            "days_overdue": s.late(d) or None, "status": state, "outstanding": s.left(d),
+            "days_overdue": s.late(d) or None, "status": state, "outstanding": s.left(d) or None,
             "bank": loan.bank if loan else None, "reminders": d.reminders_sent, "raised_on": d.raised_on}
 
 
